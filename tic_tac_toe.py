@@ -83,14 +83,20 @@ class Game:
     def toggle_player(self) -> None:
         self.current_player = next(self._turn_generator)
 
+    def clear_board(self) -> None:
+        for row_num, row in enumerate(self._moves_matrix):
+            for col_num in range(len(row)):
+                row[col_num] = Move(row_num, col_num)
+
+
 class Board(tk.Tk):
     def __init__(self, game: Game) -> None:
         super().__init__()
         self.title('Tic-Tac-Toe Game')
         self.game = game
-        self._cells = {}
         self._create_board_display(text='Ready?')
         self._create_board_grid()
+        self._create_menu()
 
     def play_move(self, clicked_btn: tk.Event):
         """Handle a player's move"""
@@ -105,7 +111,9 @@ class Board(tk.Tk):
                     msg=f'{self.game.current_player.label} wins!',
                     color=self.game.current_player.color
                 )
+                self.game.toggle_player()
             elif self.game.tie():
+                self.game.toggle_player()
                 self._update_display(msg='Cats game', color='red')
             else:
                 self.game.toggle_player()
@@ -113,6 +121,14 @@ class Board(tk.Tk):
                     msg=f"{self.game.current_player.label}'s turn",
                     color=self.game.current_player.color
                 )
+    
+    def reset_board(self):
+        self.game.clear_board()
+        self._update_display(msg='Ready?')
+        for button in self._cells:
+            button.config(highlightbackground='lightblue')
+            button.config(text='')
+            button.config(fg='black')
 
     def _create_board_display(self, text: str):
         display_frame = tk.Frame(master=self)
@@ -127,6 +143,7 @@ class Board(tk.Tk):
     def _create_board_grid(self):
         grid_frame = tk.Frame(master=self)
         grid_frame.pack()
+        self._cells = {}
         for row in range(self.game.board_size):
             self.rowconfigure(row, weight=1, minsize=50)
             self.columnconfigure(row, weight=1, minsize=75)
@@ -150,6 +167,15 @@ class Board(tk.Tk):
                     sticky='nesw'
                 )
 
+    def _create_menu(self):
+        menu_bar = tk.Menu(master=self)
+        self.config(menu=menu_bar)
+        file_menu = tk.Menu(master=menu_bar)
+        file_menu.add_command(label='Play again', command=self.reset_board)
+        file_menu.add_separator()
+        file_menu.add_command(label='Exit', command=quit)
+        menu_bar.add_cascade(label='File', menu=file_menu)
+
     def _update_button(self, clicked_button: tk.Button, player: Player):
         clicked_button.config(text=player.label)
         clicked_button.config(fg=player.color)
@@ -159,7 +185,9 @@ class Board(tk.Tk):
         self.display['fg'] = color
 
     def _highlight_cells(self, cells: list):
-        pass
+        for button, coordinates in self._cells.items():
+            if coordinates in cells:
+                button.config(highlightbackground='red')
 
 if __name__ == '__main__':
     tic_tac_toe = Game()
