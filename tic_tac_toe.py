@@ -12,7 +12,7 @@ class Player(NamedTuple):
 class Move(NamedTuple):
     row: int
     col: int
-    label: str = ''
+    label: str = None
 
 BOARD_SIZE = 3
 DEFAULT_PLAYERS = (Player('X', 'blue'), Player('O', 'green'))
@@ -62,29 +62,68 @@ class Board(tk.Tk):
 
 class Game:
     def __init__(self, players=DEFAULT_PLAYERS, board_size=BOARD_SIZE) -> None:
-        self._players = cycle(players)
+        self.turn_generator = cycle(players)
         self.board_size = board_size
-        self.current_player = next(self._players)
+        self.current_player = next(self.turn_generator)
         self._setup_board()
+        self._winning_combos = self._get_winning_combos()
         self.winner_combo = []
-        self._has_winner = False
+        self.game_over = False
 
     def _setup_board(self) -> None:
-        self._current_moves = [
+        self.moves_matrix = [
             [Move(row, col) for col in range(self.board_size)]
             for row in range(self.board_size)
         ]
-        self._winning_combos = self._get_winning_combos()
 
     def _get_winning_combos(self) -> list:
         rows = [
             [(move.row, move.col) for move in row]
-            for row in self._current_moves
+            for row in self.moves_matrix
         ]
         cols = [list(col) for col in zip(*rows)]
         row_diagonal = [row[i] for i, row in enumerate(rows)]
         col_diagonal = [col[j] for j, col in enumerate(reversed(cols))]
         return rows + cols + [row_diagonal, col_diagonal]
+
+    def validate_move(self, move: Move) -> bool:
+        if self.game_over:
+            return False
+        if self.moves_matrix[move.row][move.col].label is None:
+            return True
+        else:
+            return False
+
+    def record_move(self, move: Move) -> None:
+        self.moves_matrix[move.row][move.col] = move
+
+    def check_for_win(self) -> bool:
+        for combo in self._winning_combos:
+            if len({
+                self.moves_matrix[row][col].label
+                for row, col in combo
+                if self.moves_matrix[row][col] is not None
+            }) == 1:
+                self.game_over = True
+                self.winner_combo = combo
+                return True
+        return False
+
+    def check_for_tie(self) -> bool:
+        blocked_combo = {}
+        for combo in self._winning_combos:
+            if len({
+                self.moves_matrix[row][col].label
+                for row, col in combo
+                if self.moves_matrix[row][col] is not None
+            }) == 2:
+                blocked_combo[combo] = True
+            else:
+                blocked_combo[combo] = False
+        return all(blocked_combo)
+
+    def toggle_player(self) -> None:
+        self.current_player = next(self.turn_generator)
 
 if __name__ == '__main__':
     Board().mainloop()
