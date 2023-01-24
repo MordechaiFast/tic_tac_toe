@@ -1,4 +1,4 @@
-"""A tic-tac-toe game built wiht Python and Tkinter"""
+"""A tic-tac-toe game built with Python and Tkinter"""
 
 from itertools import cycle
 import tkinter as tk
@@ -12,7 +12,7 @@ class Player(NamedTuple):
 class Move(NamedTuple):
     row: int
     col: int
-    label: str = None
+    label: str | None = None
 
 DEFAULT_PLAYERS = (Player('X', 'blue'), Player('O', 'green'))
 BOARD_SIZE = 3
